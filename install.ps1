@@ -12,7 +12,7 @@ Invoke-WebRequest `
     -Uri "https://github.com/jhoylsonn/FolderTools/archive/refs/heads/main.zip" `
     -OutFile $zip
 
-Write-Host "Download concluído." -ForegroundColor Green
+Write-Host "Download concluido." -ForegroundColor Green
 
 # Caminho da pasta de módulos do usuário
 $modulesPath = Join-Path $env:USERPROFILE "Documents\PowerShell\Modules"
@@ -40,7 +40,7 @@ Remove-Item (Join-Path $modulesPath "FolderTools-main") -Recurse -Force
 # Remover ZIP temporário
 Remove-Item $zip -Force
 
-Write-Host "Módulo instalado em: $finalPath" -ForegroundColor Green
+Write-Host "Modulo instalado em: $finalPath" -ForegroundColor Green
 
 # Importar o módulo usando caminho absoluto
 $moduleFile = Join-Path $finalPath "FolderTools.psm1"

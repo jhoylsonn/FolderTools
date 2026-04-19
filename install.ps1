@@ -2,7 +2,7 @@
 # Instalação do módulo FolderTools
 # ================================
 
-Write-Host "Baixando módulo FolderTools do GitHub..." -ForegroundColor Cyan
+Write-Host "Baixando modulo FolderTools do GitHub..." -ForegroundColor Cyan
 
 # Caminho do ZIP temporário
 $zip = Join-Path $env:TEMP "FolderTools.zip"

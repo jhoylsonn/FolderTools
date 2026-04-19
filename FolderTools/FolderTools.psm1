@@ -311,7 +311,7 @@ function Get-FolderSize {
                     Where-Object { -not ($_.Attributes -match "ReparsePoint") }
 
         $rootResults = foreach ($d in $rootDirs) {
-            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
+            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force -ErrorAction SilentlyContinue |
                       Measure-Object Length -Sum).Sum
             if ($bytes -eq $null) { $bytes = 0 }
 
@@ -331,7 +331,7 @@ function Get-FolderSize {
                    }
 
         $recResults = foreach ($d in $recDirs) {
-            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
+            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force -ErrorAction SilentlyContinue |
                       Measure-Object Length -Sum).Sum
             if ($bytes -eq $null) { $bytes = 0 }
 
@@ -413,7 +413,7 @@ function Get-FolderSize {
                 Where-Object { -not ($_.Attributes -match "ReparsePoint") }
 
         $dirResults = foreach ($d in $dirs) {
-            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
+            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force -ErrorAction SilentlyContinue |
                       Measure-Object Length -Sum).Sum
             if ($bytes -eq $null) { $bytes = 0 }
 
@@ -508,7 +508,7 @@ function Get-FolderSize {
             Where-Object { -not ($_.Attributes -match "ReparsePoint") }
 
     $results = foreach ($d in $dirs) {
-        $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
+        $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force -ErrorAction SilentlyContinue |
                   Measure-Object Length -Sum).Sum
         if ($bytes -eq $null) { $bytes = 0 }
 

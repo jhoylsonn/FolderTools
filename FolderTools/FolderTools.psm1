@@ -200,11 +200,11 @@ function Get-FolderSize {
         Write-Host ""
         Write-Host "Exemplos:"
         Write-Host ""
-        Write-Host "Get-FolderSize C:\Users\Joilson\Documents"
+        Write-Host "Get-FolderSize C:\Users\Jason\Documents"
         Write-Host "Get-FolderSize C:\ -Sort Size"
         Write-Host "Get-FolderSize -Full -Sort Size -NoBytes"
-        Write-Host "Get-FolderSize -TotalAccurate C:\Users\Joilson\Documents"
-        Write-Host "Get-FolderSize -All C:\Users\Joilson\Documents -Sort Size"
+        Write-Host "Get-FolderSize -TotalAccurate C:\Users\Jason\Documents"
+        Write-Host "Get-FolderSize -All C:\Users\Jason\Documents -Sort Size"
         Write-Host ""
         return
     }

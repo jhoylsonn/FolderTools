@@ -15,4 +15,17 @@ Download conclui­do.
 Modulo instalado em: C:\Users\SEU_USUARIO\Documents\PowerShell\Modules\FolderTools
 FolderTools carregado com sucesso!
 
-################################################################################################################################
+######################################################################################################################
+
+Links Para Powershell para Download Remoto:
+
+1-
+Comando com Link Real
+iwr -useb https://raw.githubusercontent.com/jhoylsonn/FolderTools/main/install.ps1 | iex
+
+2-
+Comando Link Curto
+iwr -useb https://tinyurl.com/Foldertools | iex
+
+####################################################################################################################
+

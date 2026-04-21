@@ -1,8 +1,24 @@
 <#
-    FolderTools - Versão 5.9.1
+    FolderTools - Versao 5.9.2
     Autor: Joilson Michell
-    Descrição: Ferramentas avançadas para análise de pastas, perfis e armazenamento.
+    Descricao: Ferramentas avancadas para analise de pastas, perfis e armazenamento.
+
+    Objetivo desta revisao:
+    - Restaurar o comportamento e layout da 5.9.1 (Print-Row/Write-Host), incluindo:
+      * -All com separacao "PASTAS DO PRIMEIRO NIVEL" e "PASTAS RECURSIVAS"
+      * -TotalAccurate (GUI mode) listando TUDO (pastas + arquivos) com total igual Explorer (somente arquivos)
+      * -Full (pastas primeiro + arquivos depois) e TOTAL = soma dos arquivos
+      * -Help com texto customizado (igual 5.9.1)
+    - Manter as melhorias de robustez para UNC/rede:
+      * Medicoes com try/catch + -ErrorAction Stop para evitar spam de erros
+      * Itens com erro retornam 0 bytes sem interromper o processamento
+
+    Compatibilidade PS 5.1:
+    - Evita caracteres especiais (usa ASCII).
+    - Recomenda-se salvar este arquivo em UTF-8 com BOM.
 #>
+
+Set-StrictMode -Version Latest
 
 function Format-Size {
     param([long]$bytes)
@@ -17,19 +33,13 @@ function Format-Size {
 function Split-Size {
     param([string]$Formatted)
 
-    $Formatted = $Formatted.Trim() -replace "\s+", " "
+    $Formatted = ($Formatted -as [string]).Trim() -replace "\s+", " "
 
     if ($Formatted -match "^([\d\.,]+)\s+(\w+)$") {
-        return @{
-            Number = $matches[1]
-            Unit   = $matches[2]
-        }
+        return @{ Number = $matches[1]; Unit = $matches[2] }
     }
 
-    return @{
-        Number = $Formatted
-        Unit   = "bytes"
-    }
+    return @{ Number = $Formatted; Unit = "bytes" }
 }
 
 function Print-Row {
@@ -73,10 +83,6 @@ function Get-DriveSize {
     }
 }
 
-# ============================
-# PARTE 2 - INÍCIO
-# ============================
-
 function Get-StorageOverview {
     param([string]$UserPath = $null)
 
@@ -119,9 +125,11 @@ function Get-StorageOverview {
 
     function Sum-Folder([string]$path) {
         try {
-            if (Test-Path $path -ErrorAction Stop) {
-                return (Get-ChildItem $path -Recurse -File -Force -ErrorAction SilentlyContinue |
+            if (Test-Path -LiteralPath $path -ErrorAction Stop) {
+                $sum = (Get-ChildItem -LiteralPath $path -Recurse -File -Force -ErrorAction Stop |
                         Measure-Object Length -Sum).Sum
+                if ($sum -eq $null) { return 0 }
+                return [long]$sum
             }
         } catch { return 0 }
         return 0
@@ -144,7 +152,7 @@ function Get-StorageOverview {
     Write-Host "   STORAGE OVERVIEW"
     Write-Host "======================"
     Write-Host ""
-    Write-Host "Disco: $root\"
+    Write-Host "Disco: $root\\"
     Write-Host ("Total: " + (Format-Size $total))
     Write-Host ("Usado: " + (Format-Size $used))
     Write-Host ("Livre: " + (Format-Size $free))
@@ -178,9 +186,10 @@ function Get-FolderSize {
         [string]$Sort
     )
 
+    # HELP customizado (como 5.9.1)
     if ($Help) {
         Write-Host "==========================="
-        Write-Host "   FOLDERTOOLS 5.9.1 - HELP"
+        Write-Host "   FOLDERTOOLS 5.9.2 - HELP"
         Write-Host "==========================="
         Write-Host ""
         Write-Host "Get-FolderSize                       - Lista pastas do diretorio atual"
@@ -188,7 +197,7 @@ function Get-FolderSize {
         Write-Host "                                       Total = soma das pastas do primeiro nivel"
         Write-Host "Get-FolderSize -Recurse              - Lista todos os arquivos recursivamente"
         Write-Host "Get-FolderSize -Full                 - Lista pastas + arquivos (pastas primeiro)"
-        Write-Host "                                       Total = soma dos arquivos (sem duplicação)"
+        Write-Host "                                       Total = soma dos arquivos (sem duplicacao)"
         Write-Host "Get-FolderSize -TotalAccurate        - Modo GUI (pastas + arquivos, total exato)"
         Write-Host "Get-FolderSize -Sort Size            - Ordena por tamanho"
         Write-Host "Get-FolderSize -Sort Name            - Ordena por nome"
@@ -201,7 +210,7 @@ function Get-FolderSize {
         Write-Host "Exemplos:"
         Write-Host ""
         Write-Host "Get-FolderSize C:\Users\Joilson\Documents"
-        Write-Host "Get-FolderSize C:\ -Sort Size"
+        Write-Host "Get-FolderSize C:\\ -Sort Size"
         Write-Host "Get-FolderSize -Full -Sort Size -NoBytes"
         Write-Host "Get-FolderSize -TotalAccurate C:\Users\Joilson\Documents"
         Write-Host "Get-FolderSize -All C:\Users\Joilson\Documents -Sort Size"
@@ -212,11 +221,24 @@ function Get-FolderSize {
     if ($Overview) { Get-StorageOverview $Path; return }
     if ($Drivers) { Get-DriveSize; return }
 
-    $Path = (Resolve-Path $Path).Path
+    $resolved = Resolve-Path -LiteralPath $Path -ErrorAction SilentlyContinue
+    if (-not $resolved) { Write-Host "Caminho invalido: $Path"; return }
+    $Path = $resolved.Path
 
-    #
-    #  TOTAL ACCURATE (GUI MODE)
-    #
+    function Measure-DirBytes([string]$dir) {
+        try {
+            $bytes = (Get-ChildItem -LiteralPath $dir -Recurse -File -Force -ErrorAction Stop |
+                     Measure-Object Length -Sum).Sum
+            if ($bytes -eq $null) { return 0 }
+            return [long]$bytes
+        } catch {
+            return 0
+        }
+    }
+
+    # ============================
+    # TOTAL ACCURATE (GUI MODE)
+    # ============================
     if ($TotalAccurate) {
 
         if ($NoBytes) {
@@ -230,15 +252,18 @@ function Get-FolderSize {
 
         Write-Host ""
 
-        $items = Get-ChildItem -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
+        $items = @()
+        try {
+            $items = Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue
+        } catch { $items = @() }
 
         $results = @()
 
         foreach ($i in $items) {
+            # ignora junction/reparse
+            if ($i.Attributes -match "ReparsePoint") { continue }
 
             if ($i.PSIsContainer) {
-                if ($i.Attributes -match "ReparsePoint") { continue }
-
                 $mode  = "d-----"
                 $bytes = 0
                 $tipo  = "Pasta"
@@ -250,12 +275,7 @@ function Get-FolderSize {
             }
 
             $nome = $i.FullName.Replace($Path, "").TrimStart("\")
-            $results += [PSCustomObject]@{
-                Mode = $mode
-                Size = $bytes
-                Name = $nome
-                Type = $tipo
-            }
+            $results += [PSCustomObject]@{ Mode=$mode; Size=[long]$bytes; Name=$nome; Type=$tipo }
         }
 
         if ($Sort -eq "Size") { $results = $results | Sort-Object Size -Descending }
@@ -264,16 +284,19 @@ function Get-FolderSize {
         foreach ($r in $results) {
             $formatted = Format-Size $r.Size
             $split = Split-Size $formatted
-
             if ($NoBytes) {
                 Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
-            }
-            else {
+            } else {
                 Print-Row $r.Mode $split.Number $split.Unit $r.Size $r.Type $r.Name
             }
         }
 
-        $sum = (Get-ChildItem $Path -Recurse -File -Force | Measure-Object Length -Sum).Sum
+        # TOTAL = soma apenas dos arquivos reais
+        $sum = 0L
+        try {
+            $sum = (Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction Stop |
+                    Measure-Object Length -Sum).Sum
+        } catch { $sum = 0 }
         if ($sum -eq $null) { $sum = 0 }
 
         Write-Host ""
@@ -282,17 +305,9 @@ function Get-FolderSize {
         return
     }
 
-# ============================
-# PARTE 2 - FIM
-# ============================
-
-# ============================
-# PARTE 3 - INÍCIO
-# ============================
-
-    #
-    #  MODO -ALL (somente pastas, raiz + recursivas)
-    #
+    # ============================
+    # MODO -ALL (somente pastas, raiz + recursivas)
+    # ============================
     if ($All) {
 
         if ($NoBytes) {
@@ -307,49 +322,38 @@ function Get-FolderSize {
         Write-Host ""
 
         # Pastas raiz (sem junctions)
-        $rootDirs = Get-ChildItem -Path $Path -Directory -Force |
-                    Where-Object { -not ($_.Attributes -match "ReparsePoint") }
+        $rootDirs = @()
+        try {
+            $rootDirs = Get-ChildItem -LiteralPath $Path -Directory -Force -ErrorAction SilentlyContinue |
+                       Where-Object { -not ($_.Attributes -match "ReparsePoint") }
+        } catch { $rootDirs = @() }
 
         $rootResults = foreach ($d in $rootDirs) {
-            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
-                      Measure-Object Length -Sum).Sum
-            if ($bytes -eq $null) { $bytes = 0 }
-
-            [PSCustomObject]@{
-                Mode = "d-----"
-                Size = $bytes
-                Name = $d.Name
-                Type = "Pasta"
-            }
+            $bytes = Measure-DirBytes $d.FullName
+            [PSCustomObject]@{ Mode="d-----"; Size=$bytes; Name=$d.Name; Type="Pasta" }
         }
 
         # Pastas recursivas (sem duplicar raiz)
-        $recDirs = Get-ChildItem -Path $Path -Directory -Recurse -Force |
-                   Where-Object {
-                       -not ($_.Attributes -match "ReparsePoint") -and
-                       ($rootDirs.FullName -notcontains $_.FullName)
-                   }
+        $recDirs = @()
+        try {
+            $recDirs = Get-ChildItem -LiteralPath $Path -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+                      Where-Object {
+                          -not ($_.Attributes -match "ReparsePoint") -and
+                          ($rootDirs.FullName -notcontains $_.FullName)
+                      }
+        } catch { $recDirs = @() }
 
         $recResults = foreach ($d in $recDirs) {
-            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
-                      Measure-Object Length -Sum).Sum
-            if ($bytes -eq $null) { $bytes = 0 }
-
+            $bytes = Measure-DirBytes $d.FullName
             $nome = $d.FullName.Replace($Path, "").TrimStart("\")
-            [PSCustomObject]@{
-                Mode = "d-----"
-                Size = $bytes
-                Name = $nome
-                Type = "Pasta"
-            }
+            [PSCustomObject]@{ Mode="d-----"; Size=$bytes; Name=$nome; Type="Pasta" }
         }
 
-        # Ordenação
+        # Ordenacao
         if ($Sort -eq "Size") {
             $rootResults = $rootResults | Sort-Object Size -Descending
             $recResults  = $recResults  | Sort-Object Size -Descending
-        }
-        elseif ($Sort -eq "Name") {
+        } elseif ($Sort -eq "Name") {
             $rootResults = $rootResults | Sort-Object Name
             $recResults  = $recResults  | Sort-Object Name
         }
@@ -358,11 +362,9 @@ function Get-FolderSize {
         foreach ($r in $rootResults) {
             $formatted = Format-Size $r.Size
             $split = Split-Size $formatted
-
             if ($NoBytes) {
                 Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
-            }
-            else {
+            } else {
                 Print-Row $r.Mode $split.Number $split.Unit $r.Size $r.Type $r.Name
             }
         }
@@ -374,11 +376,9 @@ function Get-FolderSize {
         foreach ($r in $recResults) {
             $formatted = Format-Size $r.Size
             $split = Split-Size $formatted
-
             if ($NoBytes) {
                 Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
-            }
-            else {
+            } else {
                 Print-Row $r.Mode $split.Number $split.Unit $r.Size $r.Type $r.Name
             }
         }
@@ -392,9 +392,58 @@ function Get-FolderSize {
         return
     }
 
-    #
-    #  MODO -FULL (PASTAS PRIMEIRO + TOTAL = SOMA DOS ARQUIVOS)
-    #
+    # ============================
+    # MODO -RECURSE (somente arquivos recursivos)
+    # ============================
+    if ($Recurse) {
+
+        if ($NoBytes) {
+            Write-Host "Mode   Tamanho   UN     Tipo                 Nome"
+            Write-Host "-----  --------  ------ -------------------- ----------------------------------------"
+        }
+        else {
+            Write-Host "Mode   Tamanho   UN     Bytes        Tipo                 Nome"
+            Write-Host "-----  --------  ------ -----------  -------------------- ----------------------------------------"
+        }
+
+        Write-Host ""
+
+        $files = @()
+        try { $files = Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue } catch { $files = @() }
+
+        $results = foreach ($f in $files) {
+            if ($f.Attributes -match "ReparsePoint") { continue }
+            $nome = $f.FullName.Replace($Path, "").TrimStart("\")
+            $tipo = if ($f.Extension) { $f.Extension.TrimStart(".") } else { "Arquivo" }
+            [PSCustomObject]@{ Mode="-a----"; Size=[long]$f.Length; Name=$nome; Type=$tipo }
+        }
+
+        if ($Sort -eq "Size") { $results = $results | Sort-Object Size -Descending }
+        elseif ($Sort -eq "Name") { $results = $results | Sort-Object Name }
+
+        foreach ($r in $results) {
+            $formatted = Format-Size $r.Size
+            $split = Split-Size $formatted
+            if ($NoBytes) {
+                Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
+            } else {
+                Print-Row $r.Mode $split.Number $split.Unit $r.Size $r.Type $r.Name
+            }
+        }
+
+        $sum = ($results | Measure-Object Size -Sum).Sum
+        if ($sum -eq $null) { $sum = 0 }
+
+        Write-Host ""
+        Write-Host "----------------------------------------"
+        Write-Host ("TOTAL: " + (Format-Size $sum))
+        return
+    }
+
+    # ============================
+    # MODO -FULL (pastas primeiro + arquivos depois)
+    # TOTAL = soma dos arquivos
+    # ============================
     if ($Full) {
 
         if ($NoBytes) {
@@ -408,79 +457,58 @@ function Get-FolderSize {
 
         Write-Host ""
 
-        # PASTAS (primeiro)
-        $dirs = Get-ChildItem -Path $Path -Directory -Recurse -Force |
-                Where-Object { -not ($_.Attributes -match "ReparsePoint") }
+        # Pastas (primeiro) - recursivo, ignorando junctions
+        $dirs = @()
+        try {
+            $dirs = Get-ChildItem -LiteralPath $Path -Directory -Recurse -Force -ErrorAction SilentlyContinue |
+                   Where-Object { -not ($_.Attributes -match "ReparsePoint") }
+        } catch { $dirs = @() }
 
         $dirResults = foreach ($d in $dirs) {
-            $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
-                      Measure-Object Length -Sum).Sum
-            if ($bytes -eq $null) { $bytes = 0 }
-
+            $bytes = Measure-DirBytes $d.FullName
             $nome = $d.FullName.Replace($Path, "").TrimStart("\")
-            [PSCustomObject]@{
-                Mode = "d-----"
-                Size = $bytes
-                Name = $nome
-                Type = "Pasta"
-            }
+            [PSCustomObject]@{ Mode="d-----"; Size=$bytes; Name=$nome; Type="Pasta" }
         }
 
-        # ARQUIVOS (depois)
-        $files = Get-ChildItem -Path $Path -Recurse -File -Force
+        # Arquivos (depois)
+        $files = @()
+        try { $files = Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue } catch { $files = @() }
 
         $fileResults = foreach ($f in $files) {
-            $bytes = $f.Length
-            if ($bytes -eq $null) { $bytes = 0 }
-
             $nome = $f.FullName.Replace($Path, "").TrimStart("\")
             $tipo = if ($f.Extension) { $f.Extension.TrimStart(".") } else { "Arquivo" }
-
-            [PSCustomObject]@{
-                Mode = "-a----"
-                Size = $bytes
-                Name = $nome
-                Type = $tipo
-            }
+            [PSCustomObject]@{ Mode="-a----"; Size=[long]$f.Length; Name=$nome; Type=$tipo }
         }
 
-        # Ordenação (pastas primeiro SEMPRE)
+        # Ordenacao (pastas primeiro SEMPRE)
         if ($Sort -eq "Size") {
             $dirResults  = $dirResults  | Sort-Object Size -Descending
             $fileResults = $fileResults | Sort-Object Size -Descending
-        }
-        elseif ($Sort -eq "Name") {
+        } elseif ($Sort -eq "Name") {
             $dirResults  = $dirResults  | Sort-Object Name
             $fileResults = $fileResults | Sort-Object Name
         }
 
-        # Exibir pastas
         foreach ($r in $dirResults) {
             $formatted = Format-Size $r.Size
             $split = Split-Size $formatted
-
             if ($NoBytes) {
                 Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
-            }
-            else {
+            } else {
                 Print-Row $r.Mode $split.Number $split.Unit $r.Size $r.Type $r.Name
             }
         }
 
-        # Exibir arquivos
         foreach ($r in $fileResults) {
             $formatted = Format-Size $r.Size
             $split = Split-Size $formatted
-
             if ($NoBytes) {
                 Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
-            }
-            else {
+            } else {
                 Print-Row $r.Mode $split.Number $split.Unit $r.Size $r.Type $r.Name
             }
         }
 
-        # TOTAL = SOMA DOS ARQUIVOS (NÃO DAS PASTAS)
         $sum = ($fileResults | Measure-Object Size -Sum).Sum
         if ($sum -eq $null) { $sum = 0 }
 
@@ -490,9 +518,11 @@ function Get-FolderSize {
         return
     }
 
-    #
-    #  MODO PADRÃO (somente pastas do diretório atual)
-    #
+    # ============================
+    # MODO PADRAO (somente pastas do diretorio atual)
+    # TOTAL = soma das pastas listadas (1o nivel)
+    # ============================
+
     if ($NoBytes) {
         Write-Host "Mode   Tamanho   UN     Tipo                 Nome"
         Write-Host "-----  --------  ------ -------------------- ----------------------------------------"
@@ -504,20 +534,15 @@ function Get-FolderSize {
 
     Write-Host ""
 
-    $dirs = Get-ChildItem -Path $Path -Directory -Force |
-            Where-Object { -not ($_.Attributes -match "ReparsePoint") }
+    $dirs = @()
+    try {
+        $dirs = Get-ChildItem -LiteralPath $Path -Directory -Force -ErrorAction SilentlyContinue |
+               Where-Object { -not ($_.Attributes -match "ReparsePoint") }
+    } catch { $dirs = @() }
 
     $results = foreach ($d in $dirs) {
-        $bytes = (Get-ChildItem $d.FullName -Recurse -File -Force |
-                  Measure-Object Length -Sum).Sum
-        if ($bytes -eq $null) { $bytes = 0 }
-
-        [PSCustomObject]@{
-            Mode = "d-----"
-            Size = $bytes
-            Name = $d.Name
-            Type = "Pasta"
-        }
+        $bytes = Measure-DirBytes $d.FullName
+        [PSCustomObject]@{ Mode="d-----"; Size=$bytes; Name=$d.Name; Type="Pasta" }
     }
 
     if ($Sort -eq "Size") { $results = $results | Sort-Object Size -Descending }
@@ -526,7 +551,6 @@ function Get-FolderSize {
     foreach ($r in $results) {
         $formatted = Format-Size $r.Size
         $split = Split-Size $formatted
-
         if ($NoBytes) {
             Print-Row $r.Mode $split.Number $split.Unit "" $r.Type $r.Name -NoBytes
         }
@@ -544,7 +568,3 @@ function Get-FolderSize {
 }
 
 Export-ModuleMember -Function Get-FolderSize, Format-Size, Get-DriveSize, Get-StorageOverview
-
-# ============================
-# PARTE 3 - FIM
-# ============================

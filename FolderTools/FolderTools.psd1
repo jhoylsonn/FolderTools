@@ -31,18 +31,15 @@
             Tags = @('foldersize','storage','disk','powershell','windows','unc','smb')
             ReleaseNotes = @'
 
-            
- Versao 5.9.3.5 — Novo parametro -Resume para modo rapido e simplificacao de nomenclatura:
-
+ Versao 5.9.3.5
 • Novo  Parametro -Resume para modo rapido:
  - Adicionado novo parâmetro: -Resume (modo rápido exibindo TOTAL | ARQUIVOS | PASTAS).
  - HELP atualizado com novas descrições e exemplos.
  - Ajustes internos para suportar o novo modo sem afetar os modos existentes.
  - Mantida compatibilidade com PowerShell 5.1 e recomendação de UTF-8 com BOM.
+ - Parametros -storageoverview e get-drivesize, foram removidos, permancendo apenas o
+   -overview e -drive, respectivamente, para simplificar a nomenclatura e evitar confusões.            
 
- •- Parametros -storageoverview e get-drivesize, foram removidos, permancendo apenas o
-  -overview e -drive, respectivamente, para simplificar a nomenclatura e evitar confusões.            
- 
 ------------------------------------------------------------------------------------------ 
 
  Versao 5.9.2 — Robustez, compatibilidade e regressao zero de layout:
@@ -63,16 +60,15 @@
 
 • Novo comportamento do parametro -All:
   - Lista somente pastas (sem arquivos).
-  - Ignora junctions (ReparsePoints) como "Meus Videos", "Minhas Imagens", etc.
+  - Ignora junctions (ReparsePoints).
   - Exibe pastas do primeiro nivel separadas das recursivas.
-  - TOTAL agora soma apenas as pastas do primeiro nivel (sem duplicacao).
-  - Suporte ao -Sort (Size/Name) mantendo a estrutura raiz -> recursivas.
+  - TOTAL agora soma apenas as pastas do primeiro nivel.
 
 • Melhorias no -TotalAccurate:
   - Agora ignora junctions.
   - Respeita -NoBytes.
   - Respeita -Sort.
-  - Mantem calculo exato igual ao Windows Explorer (somando apenas arquivos reais).
+  - Mantem calculo exato igual ao Windows Explorer.
 
 • Correcoes gerais:
   - Remocao completa de duplicacao de tamanhos.

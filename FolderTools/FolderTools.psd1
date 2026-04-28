@@ -1,6 +1,6 @@
 @{
     RootModule        = 'FolderTools.psm1'
-    ModuleVersion     = '5.9.2'
+    ModuleVersion     = '5.9.3.5'
     GUID              = 'b7c1e8c3-9f4e-4f0a-9d8d-5c1f7a8c1234'
     Author            = 'Joilson'
     CompanyName       = 'Joilson'
@@ -30,7 +30,36 @@
         PSData = @{
             Tags = @('foldersize','storage','disk','powershell','windows','unc','smb')
             ReleaseNotes = @'
-Versao 5.9.1 — Melhorias significativas no calculo de tamanhos, precisao e organizacao:
+
+            
+ Versao 5.9.3.5 — Novo parametro -Resume para modo rapido e simplificacao de nomenclatura:
+
+• Novo  Parametro -Resume para modo rapido:
+ - Adicionado novo parâmetro: -Resume (modo rápido exibindo TOTAL | ARQUIVOS | PASTAS).
+ - HELP atualizado com novas descrições e exemplos.
+ - Ajustes internos para suportar o novo modo sem afetar os modos existentes.
+ - Mantida compatibilidade com PowerShell 5.1 e recomendação de UTF-8 com BOM.
+
+ •- Parametros -storageoverview e get-drivesize, foram removidos, permancendo apenas o
+  -overview e -drive, respectivamente, para simplificar a nomenclatura e evitar confusões.            
+ 
+------------------------------------------------------------------------------------------ 
+
+ Versao 5.9.2 — Robustez, compatibilidade e regressao zero de layout:
+
+• Robustez em UNC/rede:
+  - Medicoes com try/catch e -ErrorAction Stop.
+  - Itens com erro retornam 0 bytes sem interromper o processamento.
+
+• Layout e modos restaurados (como 5.9.1):
+  - -All volta a separar primeiro nivel x recursivas.
+  - -TotalAccurate volta a listar tudo e total igual Explorer.
+  - -Full volta a listar pastas primeiro e total soma apenas arquivos.
+  - -Help volta a mostrar texto customizado.
+
+-----------------------------------------------------------------------------------------
+
+ Versao 5.9.1 — Melhorias significativas no calculo de tamanhos, precisao e organizacao:
 
 • Novo comportamento do parametro -All:
   - Lista somente pastas (sem arquivos).
@@ -49,20 +78,7 @@ Versao 5.9.1 — Melhorias significativas no calculo de tamanhos, precisao e org
   - Remocao completa de duplicacao de tamanhos.
   - Filtro anti-junction aplicado em todos os modos relevantes.
   - HELP atualizado para refletir todas as mudancas da versao 5.9.
-
 ------------------------------------------------------------
-
-Versao 5.9.2 — Robustez, compatibilidade e regressao zero de layout:
-
-• Robustez em UNC/rede:
-  - Medicoes com try/catch e -ErrorAction Stop.
-  - Itens com erro retornam 0 bytes sem interromper o processamento.
-
-• Layout e modos restaurados (como 5.9.1):
-  - -All volta a separar primeiro nivel x recursivas.
-  - -TotalAccurate volta a listar tudo e total igual Explorer.
-  - -Full volta a listar pastas primeiro e total soma apenas arquivos.
-  - -Help volta a mostrar texto customizado.
 '@
         }
     }

@@ -1,5 +1,5 @@
 <#
-    FolderTools - Versao 5.9.2
+    FolderTools - Versao 5.9.3.5
     Autor: Joilson Michell
     Descricao: Ferramentas avancadas para analise de pastas, perfis e armazenamento.
 
@@ -8,7 +8,7 @@
       * -All com separacao "PASTAS DO PRIMEIRO NIVEL" e "PASTAS RECURSIVAS"
       * -TotalAccurate (GUI mode) listando TUDO (pastas + arquivos) com total igual Explorer (somente arquivos)
       * -Full (pastas primeiro + arquivos depois) e TOTAL = soma dos arquivos
-      * -Help com texto customizado (igual 5.9.1)
+      * -Resume (Para Calculo de Tamanho Rapido sem Print List
     - Manter as melhorias de robustez para UNC/rede:
       * Medicoes com try/catch + -ErrorAction Stop para evitar spam de erros
       * Itens com erro retornam 0 bytes sem interromper o processamento
@@ -183,29 +183,30 @@ function Get-FolderSize {
         [switch]$Overview,
         [switch]$Help,
         [switch]$TotalAccurate,
+		[switch]$Resume,   # <--- Novo par├ómetro
         [string]$Sort
     )
 
     # HELP customizado (como 5.9.1)
     if ($Help) {
         Write-Host "==========================="
-        Write-Host "   FOLDERTOOLS 5.9.2 - HELP"
+        Write-Host "FOLDERTOOLS 5.9.3.5 - HELP"
         Write-Host "==========================="
         Write-Host ""
-        Write-Host "Get-FolderSize                       - Lista pastas do diretorio atual"
+        Write-Host "Get-FolderSize                       - Lista as pastas do diret├│rio atual"
+		Write-Host "                                       (primeiro nivel, sem recursao)"
         Write-Host "Get-FolderSize -All                  - Lista somente pastas (raiz + recursivas)"
         Write-Host "                                       Total = soma das pastas do primeiro nivel"
         Write-Host "Get-FolderSize -Recurse              - Lista todos os arquivos recursivamente"
         Write-Host "Get-FolderSize -Full                 - Lista pastas + arquivos (pastas primeiro)"
         Write-Host "                                       Total = soma dos arquivos (sem duplicacao)"
         Write-Host "Get-FolderSize -TotalAccurate        - Modo GUI (pastas + arquivos, total exato)"
+		Write-Host "Get-FolderSize -Resume               - Mostra somente TOTAL | ARQUIVOS | PASTAS"
         Write-Host "Get-FolderSize -Sort Size            - Ordena por tamanho"
         Write-Host "Get-FolderSize -Sort Name            - Ordena por nome"
         Write-Host "Get-FolderSize -NoBytes              - Oculta a coluna Bytes"
         Write-Host "Get-FolderSize -Drivers              - Mostra informacoes dos discos"
         Write-Host "Get-FolderSize -Overview             - Resumo estilo Windows 10/11"
-        Write-Host "Get-DriveSize                        - Mostra informacoes dos discos"
-        Write-Host "Get-StorageOverview                  - Resumo direto do armazenamento"
         Write-Host ""
         Write-Host "Exemplos:"
         Write-Host ""
@@ -234,6 +235,30 @@ function Get-FolderSize {
         } catch {
             return 0
         }
+    }
+
+
+    # -----------------------
+    # BLOCO RESUME (novo)
+    # -----------------------
+    if ($Resume) {
+        $totalBytes = 0L
+        $totalFiles = 0
+        $totalDirs  = 0
+        $items = Get-ChildItem -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue
+        foreach ($i in $items) {
+            if ($i.Attributes -match "ReparsePoint") { continue }
+            if ($i.PSIsContainer) {
+                $totalDirs++
+            } else {
+                $totalFiles++
+                if ($i.Length) { $totalBytes += [long]$i.Length }
+            }
+        }
+        Write-Host ""
+        Write-Host "----------------------------------------"
+        Write-Host ("TOTAL: {0} | ARQUIVOS: {1} | PASTAS: {2}" -f (Format-Size $totalBytes), $totalFiles, $totalDirs)
+        return
     }
 
     # ============================

@@ -10,7 +10,7 @@
     CompatiblePSEditions = @('Desktop', 'Core')
 
     FunctionsToExport = @(
-        'Get-FolderSize',        
+        'Get-FolderSize'
     )
 
     CmdletsToExport   = @()

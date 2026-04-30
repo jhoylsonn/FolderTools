@@ -207,6 +207,8 @@ function Get-FolderSize {
         Write-Host "Get-FolderSize -NoBytes              - Oculta a coluna Bytes"
         Write-Host "Get-FolderSize -Drivers              - Mostra informacoes dos discos"
         Write-Host "Get-FolderSize -Overview             - Resumo estilo Windows 10/11"
+        Write-Host "Get-StorageOverview                  - Resumo estilo Windows 10/11"
+        Write-Host "Get-DriveSize                        - Mostra informacoes dos discos"
         Write-Host ""
         Write-Host "Exemplos:"
         Write-Host ""

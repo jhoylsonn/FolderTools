@@ -33,9 +33,7 @@
  - Adicionado novo parâmetro: -Resume (modo rápido exibindo TOTAL | ARQUIVOS | PASTAS).
  - HELP atualizado com novas descrições e exemplos.
  - Ajustes internos para suportar o novo modo sem afetar os modos existentes.
- - Mantida compatibilidade com PowerShell 5.1 e recomendação de UTF-8 com BOM.
- - Parametros -storageoverview e get-drivesize, foram removidos, permancendo apenas o
-   -overview e -drive, respectivamente, para simplificar a nomenclatura e evitar confusões.            
+ - Mantida compatibilidade com PowerShell 5.1 e recomendação de UTF-8 com BOM.            
 
 ------------------------------------------------------------------------------------------ 
 

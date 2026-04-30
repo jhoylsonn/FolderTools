@@ -10,11 +10,15 @@ $versions = $tags.name
 Write-Host ""
 Write-Host "Versoes disponiveis:" -ForegroundColor Yellow
 
-for ($i = 0; $i -lt $versions.Count; $i++) {
-    Write-Host "[$($i+1)] $($versions[$i])"
+# A versão mais recente (branch main) sempre aparece como opção 0
+$latest = $versions[0]
+Write-Host "[0] $latest (Ultima Versao - branch main)"
+
+# Agora listamos SOMENTE as versões antigas (ignorando a mais recente)
+for ($i = 1; $i -lt $versions.Count; $i++) {
+    Write-Host "[$i] $($versions[$i])"
 }
 
-Write-Host "[0] Ultima Versao (branch main)"
 Write-Host ""
 
 $choice = Read-Host "Digite o numero da versao que deseja instalar"
@@ -23,8 +27,7 @@ if ($choice -eq "0") {
     $Version = "latest"
 }
 else {
-    $index = [int]$choice - 1
-    $Version = $versions[$index].TrimStart("v")
+    $Version = $versions[$choice].TrimStart("v")
 }
 
 Write-Host ""
@@ -42,7 +45,7 @@ else {
 Write-Host "Baixando: $url" -ForegroundColor Yellow
 Invoke-WebRequest -Uri $url -OutFile $zip
 
-# INSTALACAO GLOBAL (igual instalador local)
+# INSTALACAO GLOBAL
 $modulesPath = "C:\Program Files\WindowsPowerShell\Modules"
 
 Expand-Archive $zip -DestinationPath $modulesPath -Force
@@ -67,7 +70,7 @@ Move-Item $downloadedPath $finalPath -Force
 Remove-Item $folderToRemove -Recurse -Force
 Remove-Item $zip -Force
 
-# IMPORTAR VIA MANIFESTO (ESSENCIAL)
+# IMPORTAR VIA MANIFESTO
 $manifest = Join-Path $finalPath "FolderTools.psd1"
 Import-Module $manifest -Force
 

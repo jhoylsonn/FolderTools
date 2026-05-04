@@ -115,4 +115,4 @@ Definir (recomendado: MIT)
 ---
 
 ##  Autor
-Joilson
+Joilson Michell

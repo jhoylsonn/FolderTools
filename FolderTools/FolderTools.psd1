@@ -1,6 +1,6 @@
 @{
     RootModule        = 'FolderTools.psm1'
-    ModuleVersion     = '5.9.3.5'
+    ModuleVersion     = '6.1.0'
     GUID              = 'b7c1e8c3-9f4e-4f0a-9d8d-5c1f7a8c1234'
     Author            = 'Joilson'
     CompanyName       = 'Joilson'
@@ -10,9 +10,11 @@
     CompatiblePSEditions = @('Desktop', 'Core')
 
     FunctionsToExport = @(
-        'Get-FolderSize'
+    'Get-FolderSize',
+		'Get-DriveSize',
+		'Get-StorageOverview',
+		'Format-Size'
     )
-
     CmdletsToExport   = @()
     VariablesToExport = @()
     AliasesToExport   = @()
@@ -25,15 +27,64 @@
 
     PrivateData = @{
         PSData = @{
-            Tags = @('foldersize','storage','disk','powershell','windows','unc','smb')
+            Tags = @('foldersize','storage','disk','powershell','windows','unc','smb','top10','top20')
             ReleaseNotes = @'
 
+  
+  
+Versao 6.1.0 - Performance & Stability Update
+• Melhorias de performance:
+- Implementado cache de tamanho de diretorios para evitar recalculo redundante
+- Otimizacao do parametro -Top (Top10, Top20, Top N) com processamento incremental
+- Reducao de uso de memoria em listagens grandes
+
+• Melhorias de confiabilidade:
+- Parametro -Resume agora informa quando itens nao puderam ser lidos
+- Melhor tratamento silencioso de erros em ambientes com restricao de acesso
+
+• Aprimoramentos internos:
+- Otimizacoes aplicadas nos modos padrao, -All, -Full e -Recurse
+- Nenhuma quebra de compatibilidade com versoes anteriores
+
+• Observacoes:
+- No modo -TotalAccurate, pastas sao listadas com tamanho 0 (somente arquivos compoem o total) 
+
+ 
+ Versao 6.0
+• Novos parametros -Top10, -Top20 e -Top N:
+ - Adicionado -Top10 (atalho rapido para os 10 maiores itens)
+ - Adicionado -Top20 (atalho rapido para os 20 maiores itens)
+ - Adicionado -Top N (flexivel, permite qualquer numero, ex: -Top 15)
+ - Top forca automaticamente ordenacao por tamanho
+ - Aplicado em todos os modos: padrao, -All, -Recurse, -Full, -TotalAccurate
+ - Mensagem clara indicando que TOTAL e soma apenas dos itens listados
+ - Objetivo: listagem rapida sem processar todo o diretorio
+
+ • Melhorias no parametro -Drivers (Get-DriveSize):
+- Padronizacao do layout com colunas em GB no cabecalho e valores sem sufixo "GB"
+- Inclusao da coluna "Root" com caminho completo (incluindo UNC em drives de rede)
+- Melhor deteccao de drives de rede usando DisplayRoot
+- Ordenacao padronizada: drives locais, depois rede e por ultimo "Temp"
+- Inclusao da linha "Temp" como referencia informativa sem impacto de performance
+- Ajustes visuais para melhor alinhamento e legibilidade do output
+
+• Correcao de bug PropertyNotFoundException:
+ - Corrigido erro quando pasta contem apenas arquivos (sem subpastas)
+ - Validacao antes de Measure-Object em todos os modos
+ - Pastas vazias agora retornam "TOTAL: 0 bytes" sem erros
+
+• HELP atualizado:
+ - Exemplos com -Top10, -Top20 e -Top N
+ - Descricoes claras dos novos parametros
+
+------------------------------------------------------------------------------------------ 
+
  Versao 5.9.3.5
-• Novo  Parametro -Resume para modo rapido:
- - Adicionado novo parâmetro: -Resume (modo rápido exibindo TOTAL | ARQUIVOS | PASTAS).
- - HELP atualizado com novas descrições e exemplos.
+• Novo Parametro -Resume para modo rapido:
+ - Adicionado novo parametro: -Resume (modo rapido exibindo TOTAL | ARQUIVOS | PASTAS).
+ - HELP atualizado com novas descricoes e exemplos.
  - Ajustes internos para suportar o novo modo sem afetar os modos existentes.
- - Mantida compatibilidade com PowerShell 5.1 e recomendação de UTF-8 com BOM.            
+ - Mantida compatibilidade com PowerShell 5.1 e recomendacao de UTF-8 com BOM.            
 
 ------------------------------------------------------------------------------------------ 
 
